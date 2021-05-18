@@ -1,0 +1,153 @@
+<script type="text/javascript" src="https://unpkg.com/vue"></script>
+<link href="https://unpkg.com/todomvc-app-css@2.1.0/index.css" rel="stylesheet" />
+<section class="todoapp">
+    <header class="header">
+        <h1>todos</h1>
+        <input class="new-todo" 
+               autocomplete="off" placeholder="What needs to be done?" 
+               v-model="NewTodo"
+               @keyup.enter="InsertTodo"
+             />
+    </header>
+    <section class="main">
+        <input class="toggle-all" id="toggle-all" type="checkbox" >
+        <label for="toggle-all">Mark all as complete</label>
+
+        <ul class="todo-list">
+            <li class="todo" v-for="todo in FtltersTodos"  :class="{completed:todo.completed , editing:todo==editetext}">
+                <div class="view">
+                     <input  class="toggle" type="checkbox" v-model="todo.completed"/>
+                     <label  @dblclick="EditeTodo(todo)">{{ todo.titel }}</label> 
+                     <button class="destroy" @click="DropTodo(todo)"></button>
+                </div>
+                 <input 
+                        class="edit" 
+                        type="text" 
+                        v-model="todo.titel"
+                        @keyup.enter="editeEnter(todo)"
+                        @keyup.esc  ="editeEsc(todo)"
+                 > 
+            </li>
+        </ul>
+
+    </section>
+     <footer class="footer">
+        <span class="todo-count">
+            <strong>{{ CounterTodoActive }}</strong> {{adds}} left
+        </span>
+        <ul class="filters">
+            <li>
+                <a href="#" @click.prevent="visibility='all'"       :class="{selected:visibility=='all'}">All</a>
+            </li>
+            <li>
+                <a href="#" @click.prevent="visibility='active'"    :class="{selected:visibility=='active'}">Active</a>
+            </li>
+            <li>
+                <a href="#" @click.prevent="visibility='completed'" :class="{selected:visibility=='completed'}">Completed</a>
+            </li>
+        </ul>
+        <button class="clear-completed"  @click="ClearComputeds()" >
+            Clear completed
+        </button>
+    </footer> 
+</section>
+
+<script>
+     var Felters =
+     {
+            all:function(TableTodo) {return TableTodo;},
+         active:function(TableTodo) {return TableTodo.filter( function(todo){ return  !todo.completed; } )},
+      completed:function(TableTodo) {return TableTodo.filter( function(todo){ return   todo.completed; } )},
+     }
+
+     var TodosStoreg = {
+
+        fetchTodos:function()
+        {
+          var todos = JSON.parse(localStorage.getItem('TableTodo') || '[]');
+          return todos;
+        },
+
+        saveTodo:function(TableTodo)
+        {
+            localStorage.setItem('TableTodo',JSON.stringify(TableTodo));
+        }
+     }
+/*---------------------------------------------*/
+    new Vue({ 
+        el:'.todoapp',
+      data:{
+              NewTodo:'',
+              visibility:'all',
+              editetext:null,
+              lasteEdite:null,
+              
+              TableTodo:TodosStoreg.fetchTodos(),
+            
+            },
+        methods:
+        {
+            editeEsc(todo)
+            {
+                todo.titel    =this.lasteEdite;
+                this.editetext=null;
+            },
+            editeEnter(todo)
+            {
+                if(this.editetext.titel=="") return this.DropTodo(todo)
+                return this.editetext="";
+            },
+            EditeTodo(todo)
+            {
+                this.lasteEdite= todo.titel;
+                this.editetext = todo;
+            },
+            InsertTodo()
+            {
+                if(this.NewTodo=="") return;
+                this.TableTodo.push({titel:this.NewTodo,completed:false});
+                this.NewTodo="";
+            },
+            DropTodo(todo)
+            {
+                 // console.log(this.TableTodo.indexOf(todo))
+                 this.TableTodo.splice(this.TableTodo.indexOf(todo),1);
+            },
+            ClearComputeds:function()
+            {
+                 this.TableTodo = Felters.active(this.TableTodo);
+            },
+        },
+        computed:
+        {
+            FtltersTodos:function()
+            {
+                return Felters[this.visibility](this.TableTodo);
+            },
+            CounterTodoActive:function()
+            {
+                return Felters['active'](this.TableTodo).length;
+            },
+            adds:function()
+            {
+                if( Felters['active'](this.TableTodo).length > 1 ) 
+                return 'items'
+
+                return 'item'
+            }
+        },
+        watch:
+        {
+            TableTodo:{
+                handler:function(TableTodo)
+                {
+                    TodosStoreg.saveTodo(TableTodo);
+                },deep:true
+            }
+        }
+      });
+
+
+
+
+</script>
